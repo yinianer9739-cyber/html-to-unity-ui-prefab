@@ -1,0 +1,3 @@
+display_name: HTML to Unity UI Prefab
+short_description: Convert HTML/CSS UI sources into Unity UGUI prefabs.
+default_prompt: Convert this HTML/CSS UI source into a Unity UGUI prefab following the project rules.
