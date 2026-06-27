@@ -21,7 +21,7 @@ Before reporting completion, verify and summarize:
 
 - Browser-computed layout was used.
 - Uniform width scale was used.
-- Root node stretches full screen.
+- Generated View structure matches `UIStartView.prefab`: full-stretch root, `mask` as the background/mask layer with its FULL notch reverse-fill script preserved, and `view` as the content container.
 - Default nodes use centered anchors unless edge anchoring was explicit.
 - Text RectTransform sizes are large enough to avoid clipping.
 - ScrollView content, viewport, and item template are sensible.

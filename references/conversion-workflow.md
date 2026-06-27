@@ -155,6 +155,26 @@ Generate `UIXXXView.prefab` under:
 Assets/Resources/ui/
 ```
 
+Before generating or regenerating a View prefab, inspect:
+
+```text
+Assets/Resources/ui/UIStartView.prefab
+Assets/Scripts/Runtime/Start/UIStartView.cs
+```
+
+Use `UIStartView` as the project-standard generated View structure:
+
+- Root GameObject name matches the prefab/class name, such as `UIXXXView`.
+- Root has a full-stretch `RectTransform`.
+- Root attaches the matching `UIXXXView.cs` MonoBehaviour when it exists.
+- First child is `mask`, a full-stretch background/mask layer. Preserve its transparent Image and the FULL script from the sample; that script handles notch-screen adaptation through reverse fill, not ordinary visual content layout.
+- Second child is `view`, a full-stretch content container. Place regular generated visible UI controls under `view`.
+- Do not put generated visual controls directly under the root when the `view` container is present.
+- Do not move background coverage, modal mask behavior, or notch-screen reverse-fill behavior out of `mask` unless the user explicitly requests a different structure.
+- Keep generated item prefabs separate; do not fold reusable list rows or cells into the View root structure.
+
+When creating a matching `UIXXXView.cs`, follow the `UIStartView.cs` registration pattern: subclass `UIView`, provide static `RegisterView()`, create `UIViewInfo`, set `viewName`, `canvasType`, `viewType`, and call `UIManager.Instance.RegisterView(info)`.
+
 If the prefab already exists, delete and recreate it only when the user asked to regenerate the view. Attach `UIXXXView.cs` if a matching MonoBehaviour exists.
 
 Root node:
