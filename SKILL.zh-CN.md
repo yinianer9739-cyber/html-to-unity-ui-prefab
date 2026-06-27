@@ -100,3 +100,6 @@ Assets/Scripts/Runtime/Start/UIStartView.cs
 - 目标 prefab 已存在，但用户没有要求重建。
 - 命名或 Item 抽取会造成不稳定的业务引用。
 - 必需美术资源缺失。
+## 原型源优先级同步
+
+当存在可运行的 HTML/CSS/JavaScript 原型时，必须先读取原型 DOM、CSS、JavaScript 状态/渲染逻辑，并以浏览器实测布局作为权威 UI 来源。截图只作为视觉核对或缺口证据；除非用户明确说明截图是更新的来源，否则不得用截图替代原型逻辑来猜测结构、行为、文案、尺寸或资源身份。本段同步 `SKILL.md`、`references/conversion-workflow.md` 和 `references/output-checklist.md` 中新增的行为规则。

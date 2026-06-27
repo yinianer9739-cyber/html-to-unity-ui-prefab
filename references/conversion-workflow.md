@@ -11,6 +11,10 @@ Before any Unity edit:
 
 ## HTML/CSS Intake
 
+Use the runnable prototype as the authoritative source when it is available. Before using screenshots, read the target DOM, CSS, and JavaScript that creates or updates the requested UI states. Extract state-specific rendering logic such as card types, disabled states, selected states, cooldown labels, refresh timers, modal pause behavior, empty-state copy, and event handlers.
+
+Use screenshots only to verify that the converted UI still matches the visible prototype state, to explain missing evidence, or to supplement work when no runnable prototype exists. Do not infer structure, behavior, copy, measurements, or asset identity from screenshots when the prototype source can answer the question.
+
 Use the HTML as an input artifact, not as a final truth source. Render it with a browser engine and collect:
 
 - viewport width and height
@@ -21,6 +25,8 @@ Use the HTML as an input artifact, not as a final truth source. Render it with a
 - text content after rendering
 
 Do not hand-calculate flex, margin collapse, text metrics, or transforms from source CSS when browser-computed values are available.
+
+When a screenshot and runnable prototype disagree, prefer the prototype logic plus browser measurement unless the user explicitly says the screenshot is a newer source of truth. Report the mismatch before editing generated Unity assets.
 
 ## Supported CSS Bias
 
@@ -63,6 +69,8 @@ Rasterize unsupported decorative CSS only when it is visually necessary and repo
 | `background-color` | solid-color Image |
 
 Prefer `data-ui-type` over tag inference when present.
+
+Map prototype state logic into serialized prefab states or runtime bindings deliberately. Static visuals, card subnodes, labels, and empty-state containers should exist in prefabs or item prefabs; runtime code should toggle/bind prebuilt nodes instead of inventing product UI controls from screenshot-derived guesses.
 
 ## Naming
 

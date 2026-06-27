@@ -19,6 +19,7 @@ Before reporting completion, verify and summarize:
 
 ## Layout Checks
 
+- Runnable prototype DOM/CSS/JavaScript state logic was checked before relying on screenshots.
 - Browser-computed layout was used.
 - Uniform width scale was used.
 - Generated View structure matches `UIStartView.prefab`: full-stretch root, `mask` as the background/mask layer with its FULL notch reverse-fill script preserved, and `view` as the content container.
@@ -26,6 +27,7 @@ Before reporting completion, verify and summarize:
 - Text RectTransform sizes are large enough to avoid clipping.
 - ScrollView content, viewport, and item template are sensible.
 - Sibling order follows z-index then DOM order.
+- Screenshots, when supplied, were used only as visual verification or explicitly reported as newer source-of-truth evidence.
 
 ## Report These Items
 
@@ -42,6 +44,7 @@ Always report:
 - repeated groups promoted to item prefabs
 - item prefabs not statically referenced because they belong to ScrollView
 - questions that need human confirmation
+- any mismatch between screenshots and runnable prototype logic or browser measurements
 
 ## Stop Conditions
 
