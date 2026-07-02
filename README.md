@@ -1,5 +1,7 @@
 # html-to-unity-ui-prefab
 
+Current version: `0.4.1`
+
 `html-to-unity-ui-prefab` is a Codex skill for converting HTML/CSS UI sources into Unity UGUI prefab workflows for a lightweight mini-game client framework.
 
 It is intended for UI reconstruction, first-time UI generation, large UI rebuilds, and prefab validation work where web-authored prototypes, source assets, Unity project rules, and same-project serialized samples must be reconciled before production Unity files are written.
@@ -62,7 +64,7 @@ html-to-unity-ui-prefab/
 
 ## Installation
 
-Copy this folder into your Codex skills directory:
+Copy the `html-to-unity-ui-prefab` folder into your Codex skills directory:
 
 ```text
 %USERPROFILE%\.codex\skills\html-to-unity-ui-prefab
@@ -70,17 +72,35 @@ Copy this folder into your Codex skills directory:
 
 Restart Codex or start a new conversation so the skill can be discovered.
 
-## Usage
+## Trigger Phrases
 
-Ask Codex to use this skill when converting an HTML/CSS UI source into a Unity UGUI prefab workflow.
-
-Example:
+You can invoke the skill explicitly:
 
 ```text
-Use html-to-unity-ui-prefab to convert this HTML/CSS UI into a Unity UGUI prefab following the project rules.
+Use $html-to-unity-ui-prefab to convert this HTML/CSS UI into a Unity UGUI prefab.
 ```
 
+Common trigger phrases:
+
+```text
+把这个 HTML/CSS 转成 Unity UGUI prefab
+根据这个网页重建 UI 预制体
+生成 UIXXXView.prefab
+检查这个 Unity UI prefab 是否合规
+验证 HTML 转 Unity UI 的结果
+```
+
+## Typical Input
+
 The skill expects the target Unity project to provide its own `AGENTS.md` and project-specific rule documents. It also expects Codex to read `references/conversion-workflow.md` during execution and `references/output-checklist.md` before reporting completion.
+
+For conversion work, provide:
+
+- Unity project root path.
+- HTML/CSS/JavaScript prototype source files or runnable prototype folder.
+- Source art, atlas input folders, resource manifests, config/data files, and generator inputs when available.
+- The target View or prefab name, such as `UIRewardView` or `UIPlayerProfileAvatarSlot`.
+- Any explicit prefab edit authorization when the target `.prefab` already exists.
 
 ## Important Defaults
 
@@ -91,6 +111,8 @@ The skill expects the target Unity project to provide its own `AGENTS.md` and pr
 - TexturePacker is required before asset or atlas work.
 - Atlas source sprites must already use the target atlas short-name prefix, such as `<atlasShortName>@<functional_name>.png`.
 - Runtime View code may bind data, toggle prepared states, call approved atlas sprite APIs for documented dynamic business states, or instantiate complete item prefabs; it must not repair missing default visuals or build raw product UI controls.
+- Non-Config runtime resources must use `AssetManager` or another approved framework loader. Direct non-Config `Resources.Load(...)` calls are blocked.
+- Config assets under `Resources/config/` are exempt from the AssetManager-only loading rule.
 
 ## Validation Scripts
 
@@ -109,6 +131,22 @@ python scripts/compare_layout_quality.py <quality-json>
 `check_static_ui_compliance.py` checks UI-specific risks such as root-only View prefabs, generated View masks missing the `UIStartView` Full script, direct non-Config `Resources.Load(...)` calls, non-ASCII GameObject names, visible or interactive components on View roots, built-in font fallback, runtime raw UI construction, and suspicious runtime visual repair.
 
 These scripts are static checks. They do not replace Unity import validation, so the skill still asks Codex to try Unity batchmode import validation when practical.
+
+## Package a Release
+
+Update `VERSION`, then run:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\package-release.ps1
+```
+
+The zip is generated under:
+
+```text
+release/html-to-unity-ui-prefab-v<VERSION>.zip
+```
+
+Upload that zip to GitHub Releases for the matching `v<VERSION>` tag.
 
 ## Maintenance Notes
 
