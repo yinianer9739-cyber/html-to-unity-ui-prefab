@@ -43,6 +43,14 @@ For image/resource evidence, search prototype source files, DOM, CSS, JavaScript
 
 Use HTML/CSS/JavaScript to discover what the UI should show and how states behave. Use Unity project evidence to decide how that UI is represented as prefabs, resources, scripts, GUID/fileID references, reusable items, runtime bindings, and validation. If web evidence and Unity production rules disagree, keep the web evidence in the report and adapt the generated Unity structure to the Unity rules.
 
+## View Boundary Decision
+
+Default popup-like flows to an independent `UIView`, opened and closed through the project UI manager rather than embedded into the caller/current View. This includes modal popups, sidebar reward panels, help/about/profile panels, confirmation dialogs, platform-gated entry panels, and similar click-to-open interfaces.
+
+Use same-View internal panels only when the UI is a strongly coupled state of the current screen, such as bottom navigation with four tabs, tabbed content, segmented modes, or persistent mode panels that are expected to switch in place. When same-View panels seem recommended for these cases but the requirement is ambiguous, explain the reason and ask the user before choosing that structure.
+
+Do not ask whether a popup-like flow should be a new View; make it a new `UIView` by default. Do not describe this rule as flattening the prefab hierarchy: it is about View ownership and runtime UI flow, not Unity GameObject nesting inside a prefab.
+
 Before generating or editing Unity UI assets:
 
 - Find the Unity project root and read `ProjectSettings/ProjectVersion.txt` before writing assets. If the Unity version is missing, state the higher risk and ask whether to continue.
