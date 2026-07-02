@@ -2,6 +2,14 @@
 
 本文档是 `SKILL.md` 及其 `references/*.md` 的中文同步说明。英文 `SKILL.md` 是技能触发和执行时的主文档；维护本技能时，如果英文主文件或引用文档里的行为、流程、项目结构规则、校验要求、完成报告要求发生变化，必须在同一次变更中同步更新本文档。
 
+## View 与 Prefab 授权规则
+
+当前任务要求生成新的 `UIXXXView` 时，不需要额外 prefab 写入授权；该生成请求本身足以创建新的 View prefab、匹配的 View 脚本、注册代码，以及项目规则允许的新配套 UI 文件。
+
+编辑已有 `.prefab` 必须获得当前任务和目标 prefab 的明确授权。没有授权时，不要修改、重新生成、覆盖、回滚或手改已有 `.prefab`。诊断、修代码、验证规则、检查层级、看截图、“确认清楚”或“按基准走”等请求，都不等于允许编辑已有 prefab。
+
+普通点击打开的界面、弹窗、侧边栏、帮助、资料、确认流程、按平台显示的入口，默认作为独立 `UIView` 通过 `UIManager.ShowView` 打开且不询问；当前 View 通常只负责显示/隐藏入口并把点击路由到独立 View。只有局部 tab/page、主界面底部按钮切换预制页面组、同屏模式面板这类同一 View 内切换功能，才建议嵌入当前 View；如果强烈建议嵌入但用户没有明确要求，应先说明原因并询问。
+
 ## 核心规则
 
 将 HTML/CSS 转成 Unity UGUI 预制体时，必须先读源码，再用浏览器渲染结果验证和测量源码实际产出的布局，不能只靠源码文本猜测布局。可运行原型、DOM、CSS、JavaScript 状态/渲染逻辑、浏览器实测布局和截图都是证据输入；最终 Unity 输出仍必须遵守用户明确指令、目标项目规则、同项目 Unity 样例、资源归属、序列化边界和校验要求。
@@ -40,12 +48,12 @@
 - 给目标 prefab 分类：源 prefab、生成 prefab、嵌套实例输出、导入资源输出或未知。
 - 生成 prefab 必须先修源规格、转换器输入、美术输入或工具流程，再重新生成；不要把手改 YAML 当成主要修复方式。直接编辑 prefab 文件会受 Unity 版本、包、GUID 和组件序列化布局影响，风险较高；只有用户明确批准当前任务以 prefab 文件本身作为编辑面时，才允许直接编辑 prefab 文件。序列化输出以同项目样例和 Unity 校验为准。
 - 任意包含 `MiniGameKit` 的项目路径默认视为框架拥有且只读，尤其是 `Assets/MiniGameKit/**`。只有用户在当前任务中明确批准具体文件变更时，才能新增、删除、修改、移动、格式化、生成或覆盖这些文件。方案看起来需要改框架文件时，先停止询问；优先使用业务层文件、配置、prefab 或已批准扩展点。
-- 遵守项目已有框架加载边界：prefab、view 和图集通常走 `MiniFrameWork.AssetManager`；有文档记录的动态业务状态 UI 图集 sprite 可以走 `MiniFrameWork.UIManager.GetSprite/TryGetSprite`；生成的 `ConfigXXXEntry` JSON 按项目规则从 `Resources/config/ConfigXXXEntry` 作为 `TextAsset` 加载。除非框架负责人批准，不要为它新增 `AssetManager` API；不要在业务侧创建平行的 `Resources.Load` 包装、临时 `LoadSprite` API，或到处散落直接 `Resources.Load`。
+- 遵守项目已有框架加载边界：prefab、view、图集、贴图、字体、sprite 和其它非 Config 运行时资源走 `MiniFrameWork.AssetManager` 或其它已批准的框架加载器；有文档记录的动态业务状态 UI 图集 sprite 可以走 `MiniFrameWork.UIManager.GetSprite/TryGetSprite`。`Resources/config/` 下的 Config 资产不受这个 AssetManager-only 规则限制。不要在运行时或业务代码里生成或新增任何直接的非 Config `Resources.Load(...)` 调用，包括 prefab、UI、texture、font、sprite 加载。如果现有 `AssetManager` 或已批准框架加载器不支持所需非 Config 资源类型、路径或加载方式，先停下来问用户是否添加或扩展加载器，不要用 `Resources.Load` 兜底。
 - 默认 UI sprite、颜色、Image Type、mask、字体、九宫切片、Item 内部结构必须先序列化进 prefab/资源。运行时 View 代码可以绑定数据、切换预置状态、为已记录的动态业务状态调用批准的图集 sprite API，或实例化完整 Item prefab；不能变成修补缺失默认视觉或运行时创建原始产品 UI 控件的兜底。
 - 生成或编辑 prefab/资源前，先写元素证据计划和结构化 prefab 规格。
 - 生成序列化字段前，先查同项目样例、资源 `.meta`、脚本 `.meta`、嵌套 prefab 样例。
 - 生成前评估公共 prefab 或 Item prefab 抽取。
-- 对生成或修改的 prefab 运行 `scripts/validate_unity_prefab.py`；有项目根且属于 UI prefab 工作时运行 `scripts/check_static_ui_compliance.py`；并在可行时尝试 Unity batchmode 导入校验。prefab validator 会检查 Unity object block、重复 fileID、缺失 GameObject 或 Transform-like object、悬空本地 fileID 引用、基本组件反向引用、父子引用、GUID 格式，以及可行时匹配 `.meta` 文件。UI scanner 会拦截 root-only View prefab、非 ASCII GameObject 名称、挂在 View 根节点上的可见或交互组件、内置字体 fallback、运行时构造原始 UI 控件，以及可疑的运行时视觉兜底。validator 或 scanner error 都按阻断处理，warning 要解决或作为风险报告。静态校验不能替代 Unity 导入校验。
+- 对生成或修改的 prefab 运行 `scripts/validate_unity_prefab.py`；有项目根且属于 UI prefab 工作时运行 `scripts/check_static_ui_compliance.py`；并在可行时尝试 Unity batchmode 导入校验。prefab validator 会检查 Unity object block、重复 fileID、缺失 GameObject 或 Transform-like object、悬空本地 fileID 引用、基本组件反向引用、父子引用、GUID 格式，以及可行时匹配 `.meta` 文件。UI scanner 会拦截 root-only View prefab、生成 View 的 `mask` 缺失 `UIStartView` Full 脚本、非 ASCII GameObject 名称、挂在 View 根节点上的可见或交互组件、内置字体 fallback、运行时构造原始 UI 控件，以及可疑的运行时视觉兜底。validator 或 scanner error 都按阻断处理，warning 要解决或作为风险报告。静态校验不能替代 Unity 导入校验。
 - 生成图集前，先按项目图集规则从外部图集源目录推导 atlas short name，再扫描每个源 sprite 文件。所有小图文件名必须已经是 `<atlasShortName>@<functional_name>.png`，归一化后的 sprite 名必须唯一。`btn_primary.png` 这类裸名、裸名和前缀名混用的重复资源、或会生成无前缀 atlas 条目的命名，都按阻断处理。源输入修正并重新生成前，不要运行 TexturePacker，也不要保留生成图集输出。
 
 ## Unity 序列化与复用规则
@@ -82,7 +90,7 @@
 ## 强制默认规则
 
 - UI prefab 和 Item 默认放在 `Assets/Resources/ui/`；除非用户明确改规则，不创建按模块拆分的 UI prefab 目录。
-- `UIStartView.prefab` 是生成 View 的标准基准：根对象命名为 `UIXXXView`，根节点挂匹配的 `UIView` 脚本，包含全屏拉伸的 `mask` 背景/遮罩层，以及全屏拉伸的 `view` 内容容器。
+- `UIStartView.prefab` 是生成 View 的标准基准：根对象命名为 `UIXXXView`，根节点挂匹配的 `UIView` 脚本，包含全屏拉伸且保留样例 Full 脚本的 `mask` 背景/遮罩层，以及全屏拉伸的 `view` 内容容器。
 - prefab 根节点保持轻量，通常只放 `RectTransform` 和必要 View/controller 脚本。Image、Text、Button、ScrollRect、layout group 等可见或交互控件放在命名子节点。
 - 默认 UI 视觉必须先序列化进 prefab/资源：sprite、颜色、Image Type、mask、raycast、字体、九宫切片、Item 内部结构。不要在 View 代码里用运行时 `SetSprite`、直接 `image.sprite =`、直接 `image.color =`、内置字体 fallback 或临时资源加载来修补默认视觉。
 - 重复 UI 单元要抽为 `UIXXXItem.prefab`、嵌套/静态 prefab 实例，或静态布局容器下的 Item prefab 池。三个及以上重复实例是强制抽取信号；两个复杂或可复用实例也应抽取，除非规格里记录明确例外。
@@ -157,7 +165,7 @@ Assets/Scripts/Runtime/Start/UIStartView.cs
 - 同项目样例只用于序列化机制或已批准的 Unity 结构，没有把样例视觉资源、颜色、材质、Image Type 或状态语义当成目标视觉证据。
 - 资产和脚本 GUID 来自 `.meta` 或同项目样例，本地 fileID 在 prefab 内唯一且引用一致。
 - 默认 UI 视觉已序列化进 prefab/资源。
-- 框架加载边界未被破坏：没有新增未批准的 `AssetManager` API、业务侧 `Resources.Load` 包装、临时 `LoadSprite` API 或散落的直接 `Resources.Load`。
+- 框架加载边界未被破坏：非 Config 运行时资源走 `AssetManager` 或其它已批准框架加载器，没有新增直接的非 Config `Resources.Load(...)` 调用；`Resources/config/` 下的 Config 资产按例外处理；加载器缺少非 Config 资源能力时，已先询问用户是否添加 API 或扩展加载器。
 - HTML 转换、解析器、截图、DOM 映射和资源推断结果已与 Unity 资源身份、序列化字段、GUID/fileID 引用、运行时/静态边界、Item 抽取和校验要求对齐。
 - 每个受影响 UI 元素的证据已回答：为什么存在、为什么使用对应图片/颜色/字体/材质/图集条目、为什么使用对应位置/尺寸/anchor/sibling order/mask/层级、有哪些状态和序列化变化、交互由哪个 View/model/event 绑定负责、哪些是静态数据而哪些允许运行时处理、是否存在推断或证据缺失。
 - 使用了原型源码 DOM/CSS/JavaScript 和浏览器 computed layout，且浏览器/截图证据发生在源码审阅之后。
@@ -171,7 +179,7 @@ Assets/Scripts/Runtime/Start/UIStartView.cs
 - 兄弟节点顺序遵循 z-index 和 DOM 顺序。
 - 重复 UI 单元已抽为 Item prefab、嵌套/静态实例或 Item prefab 池，或者规格里记录了明确例外。
 - 已运行 `scripts/validate_unity_prefab.py` 校验生成或修改的 prefab。
-- 有项目根且属于 UI prefab 工作时，已运行 `scripts/check_static_ui_compliance.py`，并覆盖 root-only View prefab、非 ASCII GameObject 名称、View 根节点可见或交互组件、内置字体 fallback、运行时构造原始 UI 控件和可疑运行时视觉兜底检查。
+- 有项目根且属于 UI prefab 工作时，已运行 `scripts/check_static_ui_compliance.py`，并覆盖 root-only View prefab、生成 View 的 `mask` 缺失 `UIStartView` Full 脚本、直接的非 Config `Resources.Load(...)` 调用、非 ASCII GameObject 名称、View 根节点可见或交互组件、内置字体 fallback、运行时构造原始 UI 控件和可疑运行时视觉兜底检查。
 - 可行时已尝试 Unity batchmode 导入校验，并检查 YAML、缺脚本、导入错误、prefab 加载失败、缺 GUID。
 - View 运行时代码没有用临时 sprite/color/font/resource fallback 逻辑修补缺失的默认 UI 视觉。
 - 静态容器已配置完成时，允许运行时实例化完整 `UIXXXItem.prefab`；不允许运行时构造该 Item 的原始控件。
@@ -179,6 +187,22 @@ Assets/Scripts/Runtime/Start/UIStartView.cs
 ## 必须报告
 
 完成报告需要列出：生成的 prefab、source/generated 分类和拥有源/工具、生成或移动的资源、不支持的 CSS、栅格化为 PNG 的 CSS 视觉、自动生成或重命名节点、缺失源图片、推断组件类型、疑似九宫切片但未确认 slice 数据的资源、提升为 Item prefab 的重复组、因属于 ScrollView 而未静态引用的 Item prefab、抽取的公共 prefab 及引用它的 prefab、静态 prefab validator 结果、静态 UI 合规扫描结果、Unity batchmode 结果或跳过原因、资产和脚本 GUID/fileID 依赖、跳过的校验及原因、仍需人工确认的问题、Unity 内仍需人工检查的问题，以及截图和原型逻辑/浏览器测量不一致的地方。出现证据冲突时，按用户明确指令、项目规则、Unity 输出约束、同项目样例、原型/浏览器证据、截图证据的顺序处理。
+
+## 0.4.0 质量门禁同步说明
+
+本版本新增“布局质量门禁”：生成 prefab 不等于转换完成，必须证明 Unity 输出和源代码驱动的 HTML 原型足够接近，或者把差异作为未完成工作报告。
+
+转换完成前应记录每个关键元素的浏览器 `getBoundingClientRect()`、生成或导出的 Unity rect、位置偏差、尺寸偏差、视觉资源证据和样式支持状态。默认阈值为位置偏差不超过 4 个缩放像素，尺寸偏差不超过 2%。项目或用户给出更严格阈值时，以更严格阈值为准。
+
+当存在对比 JSON 时，运行：
+
+```text
+python scripts/compare_layout_quality.py <quality-json>
+```
+
+JSON 中的元素建议包含 `id`、`html_rect`、`unity_rect`、`visual_required`、`asset_status`、`style_required`、`style_status`。关键视觉元素如果缺少资源证据，或者只标记为 missing、unknown、inferred、placeholder、substitute，应阻断完成，除非用户明确接受该妥协。关键样式如果缺少支持或未实现，也应阻断完成。
+
+如果可以自动截取 Unity 渲染图，应把 Unity 截图与浏览器截图或源截图做 overlay/diff。像素级完全一致不是硬要求，但明显的位置错误、缺图、层级错误、裁剪、字体错误或 CSS 视觉缺失，都应修复或报告为未完成工作。
 
 ## 停止条件
 
