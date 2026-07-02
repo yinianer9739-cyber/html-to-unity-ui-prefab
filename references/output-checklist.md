@@ -31,7 +31,7 @@ Before reporting completion, verify and summarize:
 - Visually similar project sprites, common atlas entries, button backgrounds, panel backgrounds, frame sprites, or other reusable UI pieces were not used as substitute source art.
 - Same-project samples were used only for serialization mechanics or approved Unity structure, not as proof for copying their visual assets, colors, materials, Image types, or visual states.
 - Default UI visuals were serialized into prefabs/resources before runtime binding code.
-- Framework loading boundaries were preserved: no new unapproved `AssetManager` APIs, business-side `Resources.Load` wrappers, ad-hoc `LoadSprite` APIs, or scattered direct `Resources.Load` calls.
+- Framework loading boundaries were preserved: non-Config runtime resources go through `AssetManager` or another approved framework loader, no direct non-Config `Resources.Load(...)` calls were added, Config assets under `Resources/config/` were treated as exempt, and missing non-Config loader support was escalated to the user before adding APIs or fallbacks.
 - HTML conversion, parser, screenshot, DOM mapping, and resource inference decisions were reconciled with Unity resource identity, serialized fields, GUID/fileID references, runtime/static boundaries, item extraction, and validation.
 
 ## Layout Checks
@@ -72,7 +72,7 @@ Before reporting completion, verify and summarize:
 
 - `scripts/validate_unity_prefab.py` was run on every generated or modified prefab.
 - `scripts/check_static_ui_compliance.py` was run for UI prefab work when a project root was available.
-- Static UI compliance covered root-only View prefabs, non-ASCII GameObject names, visible or interactive components on a View root, built-in font fallback, runtime raw UI construction, and suspicious runtime visual repair.
+- Static UI compliance covered root-only View prefabs, generated View masks missing the `UIStartView` Full script, non-ASCII GameObject names, visible or interactive components on a View root, direct non-Config `Resources.Load(...)` calls, built-in font fallback, runtime raw UI construction, and suspicious runtime visual repair.
 - Validator errors were treated as blockers; warnings were resolved or reported as risk.
 - Unity batchmode import validation was attempted when a Unity Editor executable was available and practical.
 - Unity import logs were checked for YAML parse errors, missing scripts, asset import errors, prefab load failures, and missing GUIDs.

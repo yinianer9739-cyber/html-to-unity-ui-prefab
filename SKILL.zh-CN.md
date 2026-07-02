@@ -40,7 +40,7 @@
 - 给目标 prefab 分类：源 prefab、生成 prefab、嵌套实例输出、导入资源输出或未知。
 - 生成 prefab 必须先修源规格、转换器输入、美术输入或工具流程，再重新生成；不要把手改 YAML 当成主要修复方式。直接编辑 prefab 文件会受 Unity 版本、包、GUID 和组件序列化布局影响，风险较高；只有用户明确批准当前任务以 prefab 文件本身作为编辑面时，才允许直接编辑 prefab 文件。序列化输出以同项目样例和 Unity 校验为准。
 - 任意包含 `MiniGameKit` 的项目路径默认视为框架拥有且只读，尤其是 `Assets/MiniGameKit/**`。只有用户在当前任务中明确批准具体文件变更时，才能新增、删除、修改、移动、格式化、生成或覆盖这些文件。方案看起来需要改框架文件时，先停止询问；优先使用业务层文件、配置、prefab 或已批准扩展点。
-- 遵守项目已有框架加载边界：prefab、view 和图集通常走 `MiniFrameWork.AssetManager`；有文档记录的动态业务状态 UI 图集 sprite 可以走 `MiniFrameWork.UIManager.GetSprite/TryGetSprite`；生成的 `ConfigXXXEntry` JSON 按项目规则从 `Resources/config/ConfigXXXEntry` 作为 `TextAsset` 加载。除非框架负责人批准，不要为它新增 `AssetManager` API；不要在业务侧创建平行的 `Resources.Load` 包装、临时 `LoadSprite` API，或到处散落直接 `Resources.Load`。
+- 遵守项目已有框架加载边界：prefab、view、图集、贴图、字体、sprite 和其它非 Config 运行时资源走 `MiniFrameWork.AssetManager` 或其它已批准的框架加载器；有文档记录的动态业务状态 UI 图集 sprite 可以走 `MiniFrameWork.UIManager.GetSprite/TryGetSprite`。`Resources/config/` 下的 Config 资产不受这个 AssetManager-only 规则限制。不要在运行时或业务代码里生成或新增任何直接的非 Config `Resources.Load(...)` 调用，包括 prefab、UI、texture、font、sprite 加载。如果现有 `AssetManager` 或已批准框架加载器不支持所需非 Config 资源类型、路径或加载方式，先停下来问用户是否添加或扩展加载器，不要用 `Resources.Load` 兜底。
 - 默认 UI sprite、颜色、Image Type、mask、字体、九宫切片、Item 内部结构必须先序列化进 prefab/资源。运行时 View 代码可以绑定数据、切换预置状态、为已记录的动态业务状态调用批准的图集 sprite API，或实例化完整 Item prefab；不能变成修补缺失默认视觉或运行时创建原始产品 UI 控件的兜底。
 - 生成或编辑 prefab/资源前，先写元素证据计划和结构化 prefab 规格。
 - 生成序列化字段前，先查同项目样例、资源 `.meta`、脚本 `.meta`、嵌套 prefab 样例。
@@ -82,7 +82,7 @@
 ## 强制默认规则
 
 - UI prefab 和 Item 默认放在 `Assets/Resources/ui/`；除非用户明确改规则，不创建按模块拆分的 UI prefab 目录。
-- `UIStartView.prefab` 是生成 View 的标准基准：根对象命名为 `UIXXXView`，根节点挂匹配的 `UIView` 脚本，包含全屏拉伸的 `mask` 背景/遮罩层，以及全屏拉伸的 `view` 内容容器。
+- `UIStartView.prefab` 是生成 View 的标准基准：根对象命名为 `UIXXXView`，根节点挂匹配的 `UIView` 脚本，包含全屏拉伸且保留样例 Full 脚本的 `mask` 背景/遮罩层，以及全屏拉伸的 `view` 内容容器。
 - prefab 根节点保持轻量，通常只放 `RectTransform` 和必要 View/controller 脚本。Image、Text、Button、ScrollRect、layout group 等可见或交互控件放在命名子节点。
 - 默认 UI 视觉必须先序列化进 prefab/资源：sprite、颜色、Image Type、mask、raycast、字体、九宫切片、Item 内部结构。不要在 View 代码里用运行时 `SetSprite`、直接 `image.sprite =`、直接 `image.color =`、内置字体 fallback 或临时资源加载来修补默认视觉。
 - 重复 UI 单元要抽为 `UIXXXItem.prefab`、嵌套/静态 prefab 实例，或静态布局容器下的 Item prefab 池。三个及以上重复实例是强制抽取信号；两个复杂或可复用实例也应抽取，除非规格里记录明确例外。
@@ -157,7 +157,7 @@ Assets/Scripts/Runtime/Start/UIStartView.cs
 - 同项目样例只用于序列化机制或已批准的 Unity 结构，没有把样例视觉资源、颜色、材质、Image Type 或状态语义当成目标视觉证据。
 - 资产和脚本 GUID 来自 `.meta` 或同项目样例，本地 fileID 在 prefab 内唯一且引用一致。
 - 默认 UI 视觉已序列化进 prefab/资源。
-- 框架加载边界未被破坏：没有新增未批准的 `AssetManager` API、业务侧 `Resources.Load` 包装、临时 `LoadSprite` API 或散落的直接 `Resources.Load`。
+- 框架加载边界未被破坏：非 Config 运行时资源走 `AssetManager` 或其它已批准框架加载器，没有新增直接的非 Config `Resources.Load(...)` 调用；`Resources/config/` 下的 Config 资产按例外处理；加载器缺少非 Config 资源能力时，已先询问用户是否添加 API 或扩展加载器。
 - HTML 转换、解析器、截图、DOM 映射和资源推断结果已与 Unity 资源身份、序列化字段、GUID/fileID 引用、运行时/静态边界、Item 抽取和校验要求对齐。
 - 每个受影响 UI 元素的证据已回答：为什么存在、为什么使用对应图片/颜色/字体/材质/图集条目、为什么使用对应位置/尺寸/anchor/sibling order/mask/层级、有哪些状态和序列化变化、交互由哪个 View/model/event 绑定负责、哪些是静态数据而哪些允许运行时处理、是否存在推断或证据缺失。
 - 使用了原型源码 DOM/CSS/JavaScript 和浏览器 computed layout，且浏览器/截图证据发生在源码审阅之后。
@@ -171,7 +171,7 @@ Assets/Scripts/Runtime/Start/UIStartView.cs
 - 兄弟节点顺序遵循 z-index 和 DOM 顺序。
 - 重复 UI 单元已抽为 Item prefab、嵌套/静态实例或 Item prefab 池，或者规格里记录了明确例外。
 - 已运行 `scripts/validate_unity_prefab.py` 校验生成或修改的 prefab。
-- 有项目根且属于 UI prefab 工作时，已运行 `scripts/check_static_ui_compliance.py`，并覆盖 root-only View prefab、非 ASCII GameObject 名称、View 根节点可见或交互组件、内置字体 fallback、运行时构造原始 UI 控件和可疑运行时视觉兜底检查。
+- 有项目根且属于 UI prefab 工作时，已运行 `scripts/check_static_ui_compliance.py`，并覆盖 root-only View prefab、生成 View 的 `mask` 缺失 `UIStartView` Full 脚本、直接的非 Config `Resources.Load(...)` 调用、非 ASCII GameObject 名称、View 根节点可见或交互组件、内置字体 fallback、运行时构造原始 UI 控件和可疑运行时视觉兜底检查。
 - 可行时已尝试 Unity batchmode 导入校验，并检查 YAML、缺脚本、导入错误、prefab 加载失败、缺 GUID。
 - View 运行时代码没有用临时 sprite/color/font/resource fallback 逻辑修补缺失的默认 UI 视觉。
 - 静态容器已配置完成时，允许运行时实例化完整 `UIXXXItem.prefab`；不允许运行时构造该 Item 的原始控件。

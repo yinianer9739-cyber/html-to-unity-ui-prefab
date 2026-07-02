@@ -38,6 +38,12 @@ OBJECT_HEADER_RE = re.compile(r"^--- !u!(?P<class_id>\d+) &(?P<file_id>-?\d+)", 
 NAME_RE = re.compile(r"^\s*m_Name:\s*(?P<name>.*)$", re.MULTILINE)
 GAME_OBJECT_RE = re.compile(r"^\s*GameObject:\s*$", re.MULTILINE)
 GAME_OBJECT_REF_RE = re.compile(r"m_GameObject:\s*\{fileID:\s*(?P<file_id>-?\d+)\}")
+SCRIPT_GUID_RE = re.compile(r"m_Script:\s*\{fileID:\s*11500000,\s*guid:\s*(?P<guid>[0-9a-fA-F]{32}),\s*type:\s*3\}")
+RESOURCES_LOAD_CALL_RE = re.compile(r"\bResources\.Load\s*(?:<[^>]*>)?\s*\(", re.IGNORECASE)
+RESOURCES_LOAD_LITERAL_RE = re.compile(
+    r'\bResources\.Load\s*(?:<[^>]*>)?\s*\(\s*[$@]{0,2}"(?P<path>(?:[^"\\]|\\.)*)"',
+    re.IGNORECASE,
+)
 
 
 @dataclass
@@ -84,7 +90,47 @@ def _view_root_id(path: Path, objects: list[tuple[str, str, str]]) -> str | None
     return first_game_object
 
 
-def _scan_prefab(path: Path, report: ComplianceReport) -> None:
+def _named_game_object_id(objects: list[tuple[str, str, str]], name: str) -> str | None:
+    for file_id, type_name, body in objects:
+        if type_name == "GameObject" and _game_object_name(body) == name:
+            return file_id
+    return None
+
+
+def _mono_behaviour_script_guids_for_game_object(
+    objects: list[tuple[str, str, str]], game_object_id: str | None
+) -> set[str]:
+    if not game_object_id:
+        return set()
+
+    guids: set[str] = set()
+    for _, type_name, body in objects:
+        if type_name != "MonoBehaviour":
+            continue
+        owner = GAME_OBJECT_REF_RE.search(body)
+        if not owner or owner.group("file_id") != game_object_id:
+            continue
+        script = SCRIPT_GUID_RE.search(body)
+        if script:
+            guids.add(script.group("guid").lower())
+    return guids
+
+
+def _mask_mono_behaviour_script_guids(text: str) -> set[str]:
+    objects = _parse_objects(text)
+    mask_id = _named_game_object_id(objects, "mask")
+    return _mono_behaviour_script_guids_for_game_object(objects, mask_id)
+
+
+def _ui_start_mask_script_guids(root: Path) -> set[str]:
+    start_prefab = root / "Assets" / "Resources" / "ui" / "UIStartView.prefab"
+    if not start_prefab.exists():
+        return set()
+    text = start_prefab.read_text(encoding="utf-8", errors="ignore")
+    return _mask_mono_behaviour_script_guids(text)
+
+
+def _scan_prefab(path: Path, report: ComplianceReport, start_mask_script_guids: set[str]) -> None:
     text = path.read_text(encoding="utf-8", errors="ignore")
     game_object_count = len(GAME_OBJECT_RE.findall(text))
     objects = _parse_objects(text)
@@ -104,6 +150,12 @@ def _scan_prefab(path: Path, report: ComplianceReport) -> None:
                         f"{path}: root contains visible or interactive component {type_name} ({file_id})"
                     )
 
+        if path.stem != "UIStartView" and start_mask_script_guids:
+            mask_id = _named_game_object_id(objects, "mask")
+            actual_mask_script_guids = _mono_behaviour_script_guids_for_game_object(objects, mask_id)
+            if not actual_mask_script_guids.intersection(start_mask_script_guids):
+                report.errors.append(f"{path}: mask is missing UIStartView Full script")
+
     for match in NAME_RE.finditer(text):
         name = match.group("name").strip()
         if name and not _is_ascii_name(name):
@@ -115,8 +167,14 @@ def _scan_code(path: Path, report: ComplianceReport) -> None:
     if "Resources.GetBuiltinResource<Font>" in text or "LegacyRuntime.ttf" in text or "Arial.ttf" in text:
         report.errors.append(f"{path}: runtime built-in font fallback is not allowed for product UI")
 
-    if re.search(r"\bResources\.Load\s*<", text):
-        report.warnings.append(f"{path}: direct Resources.Load usage must be justified by project rules")
+    for match in RESOURCES_LOAD_CALL_RE.finditer(text):
+        literal_match = RESOURCES_LOAD_LITERAL_RE.match(text, match.start())
+        if literal_match and literal_match.group("path").lower().startswith("config/"):
+            continue
+        report.errors.append(
+            f"{path}: direct Resources.Load usage is not allowed outside Config; use AssetManager or ask before extending it"
+        )
+        break
 
     if "new GameObject" in text:
         for component in UI_COMPONENTS:
@@ -142,8 +200,9 @@ def scan_project(project_root: str | Path) -> ComplianceReport:
         report.errors.append(f"Assets directory does not exist under project root: {root}")
         return report
 
+    start_mask_script_guids = _ui_start_mask_script_guids(root)
     for prefab in assets.rglob("*.prefab"):
-        _scan_prefab(prefab, report)
+        _scan_prefab(prefab, report, start_mask_script_guids)
 
     for script in assets.rglob("*.cs"):
         _scan_code(script, report)

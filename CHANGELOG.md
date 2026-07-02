@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.4.1
+
+- Preserve the `UIStartView` mask Full script requirement for generated View prefabs.
+- Treat direct non-Config `Resources.Load(...)` calls as static compliance errors.
+- Keep Config assets under `Resources/config/` exempt from the AssetManager-only resource rule.
+- Add scanner tests for mask Full script preservation, non-Config resource loading errors, Config load exceptions, and mixed Config/non-Config loading.
+- Update README, skill docs, workflow notes, and output checklist for the 0.4.1 loading boundary.
+
 ## 0.4.0
 
 - Add a required layout quality gate for HTML-to-UGUI conversion completion.
