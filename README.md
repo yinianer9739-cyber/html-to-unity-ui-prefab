@@ -40,6 +40,7 @@ html-to-unity-ui-prefab/
   SKILL.zh-CN.md
   LICENSE
   README.md
+  VERSION
   agents/
     openai.yaml
   references/
@@ -102,6 +103,7 @@ These scripts are static checks. They do not replace Unity import validation, so
 
 ## Maintenance Notes
 
+- Keep `VERSION` synchronized with the latest released semantic version and matching git tag.
 - Keep `SKILL.zh-CN.md` synchronized whenever `SKILL.md` or `references/*.md` changes behavior, workflow steps, project structure rules, validation requirements, or completion reporting.
 - Keep English Markdown in the skill files free of CJK rule text; put Chinese explanations in `SKILL.zh-CN.md` unless preserving source/prototype display text as data.
 - Update this README when the public workflow, repository layout, validation commands, or maintenance contract changes.
