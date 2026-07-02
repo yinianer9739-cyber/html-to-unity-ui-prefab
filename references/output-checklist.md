@@ -39,6 +39,13 @@ Before reporting completion, verify and summarize:
 - Source files for runnable prototype DOM/CSS/JavaScript state logic were checked before opening the rendered page or relying on screenshots.
 - Browser-computed layout was used.
 - Uniform width scale was used.
+- Browser `getBoundingClientRect()` values were recorded for meaningful elements.
+- Generated or exported Unity rects were recorded for matching meaningful elements.
+- Layout quality was compared with `scripts/compare_layout_quality.py` or an equivalent report when comparison data was available.
+- Position delta is <= 4 scaled pixels and size delta is <= 2 percent for required elements, unless the user or project approved a different threshold.
+- Required visual elements have source-backed or plan-documented generated `asset_status`; missing, unknown, inferred, placeholder, or substitute visual evidence was treated as a blocker unless explicitly accepted.
+- Required style features have supported or rasterized `style_status`; missing, unknown, inferred, or unsupported style evidence was treated as a blocker unless explicitly accepted.
+- Browser screenshot versus Unity screenshot or overlay/diff was produced when Unity screenshot automation was practical; visible mismatch was resolved or reported as unfinished work.
 - Generated View structure matches `UIStartView.prefab`: full-stretch root, `mask` as the background/mask layer with its FULL notch reverse-fill script preserved, and `view` as the content container.
 - Root remains thin and does not contain visible or interactive UI controls unless explicitly required by the user or same-project samples.
 - Every visible control is a named child object with stable English naming; visible controls are not placed on the prefab root unless explicitly required.
@@ -90,6 +97,8 @@ Always report:
 - item prefabs not statically referenced because they belong to ScrollView
 - common prefabs extracted and which prefabs reference them
 - static prefab validator result and Unity batchmode result or skip reason
+- layout quality gate result, thresholds, and worst element deltas
+- screenshot or overlay/diff result when available, or skip reason
 - asset and script GUID dependencies
 - skipped validation checks and why they were skipped
 - questions that need human confirmation

@@ -61,7 +61,8 @@ Before editing Unity files:
 8. Search same-project samples before generating serialized fields: similar prefabs, scene objects, script `.meta`, asset `.meta`, nested prefab examples, prefab instance overrides, class IDs, fileIDs, object order, component field names, and external references.
 9. Write the element evidence plan and structured prefab spec before prefab/resource edits. Present the spec for confirmation before writing production `.prefab` files unless the user has already explicitly approved automated generation or regeneration for this task.
 10. Evaluate common prefab or item prefab extraction before generation.
-11. Validate generated prefabs with `scripts/validate_unity_prefab.py`, run `scripts/check_static_ui_compliance.py` for UI prefab work when a project root is available, and try Unity batchmode import validation when practical.
+11. Run the layout quality gate after generation. Compare browser-measured rects with generated Unity rects and visual/style evidence. Treat threshold failures as unfinished conversion work.
+12. Validate generated prefabs with `scripts/validate_unity_prefab.py`, run `scripts/check_static_ui_compliance.py` for UI prefab work when a project root is available, and try Unity batchmode import validation when practical.
 
 The HTML parser may determine rendered layout and prototype state evidence. It must not decide asset identity, prefab ownership, serialized fields, GUID/fileID references, default visual serialization, or runtime/static boundaries by itself. If a parser, mapper, inferred component type, screenshot-derived layout, or generated resource rule touches those Unity concerns, adapt the HTML conversion result to the Unity output preparation above.
 
@@ -148,6 +149,32 @@ Coordinate conversion:
 3. Multiply centered coordinates by `scale`.
 4. Use centered anchors by default.
 5. Use edge or stretch anchors only when HTML semantics or `data-ui-anchor` clearly requires it.
+
+## Layout Quality Gate
+
+The conversion is complete only after it proves that generated Unity layout and visual evidence are close enough to the source-backed prototype.
+
+For each meaningful generated element, record:
+
+- stable element id or GameObject path
+- browser-measured `html_rect` from `getBoundingClientRect()`
+- generated or exported `unity_rect`
+- position delta in scaled pixels
+- size delta percent
+- whether a visual asset is required
+- `asset_status`: source, generated, supported, missing, unknown, inferred, placeholder, or substitute
+- whether CSS/style support is required
+- `style_status`: supported, rasterized, missing, unsupported, unknown, or inferred
+
+Default thresholds are position delta <= 4 scaled pixels and size delta <= 2 percent. Use stricter project or user thresholds when provided. Any required element above threshold blocks completion until corrected or explicitly accepted by the user.
+
+When a comparison JSON is available, run:
+
+```text
+python scripts/compare_layout_quality.py <quality-json>
+```
+
+When Unity screenshot automation is available, capture the generated UI and compare it with the browser or source screenshot. Produce or report an overlay/diff result. Pixel-perfect equality is not required, but visible position errors, missing images, wrong layering, clipping, wrong fonts, or unimplemented CSS visuals are blockers unless explicitly accepted.
 
 ## Stacking And Hierarchy
 
@@ -284,6 +311,8 @@ When creating new local fileIDs, keep them unique within the prefab and update e
 Run `scripts/validate_unity_prefab.py` on every generated or modified prefab. The validator checks Unity object blocks, duplicate fileIDs, missing GameObject or Transform-like objects, dangling local fileID references, basic component back-references, parent/child references, GUID format, and matching `.meta` files when possible.
 
 Run `scripts/check_static_ui_compliance.py` for UI prefab work when a project root is available. The scanner catches root-only View prefabs, non-ASCII GameObject names, visible or interactive components attached to a View root, built-in font fallback, runtime raw UI construction, and suspicious runtime visual repair.
+
+Run `scripts/compare_layout_quality.py` when browser and Unity rect evidence is available. Treat errors as blockers and warnings as risks to resolve or report.
 
 Treat validator errors as blockers. Treat warnings as risks to resolve or report. The validator is not a replacement for Unity import validation.
 

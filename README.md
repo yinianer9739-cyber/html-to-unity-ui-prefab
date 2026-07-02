@@ -16,6 +16,7 @@ The skill now treats conversion as a source-first, evidence-driven workflow:
 - Preserve framework-owned boundaries such as `MiniGameKit` and existing `MiniFrameWork` loading patterns.
 - Serialize default UI visuals into prefabs/resources before runtime View code binds data or toggles states.
 - Use same-project samples for serialization mechanics, not as proof for copying unrelated visual assets.
+- Prove generated layout quality with rect comparison, visual/style evidence, and optional screenshot diff before claiming completion.
 - Validate generated or modified prefabs with the bundled static validation scripts before claiming completion.
 
 ## What It Covers
@@ -24,6 +25,7 @@ The skill now treats conversion as a source-first, evidence-driven workflow:
 - Source-first prototype interpretation.
 - Browser-computed layout collection after source review.
 - Per-element evidence for visuals, layout, hierarchy, state, interaction, static data, runtime behavior, and remaining gaps.
+- Layout quality gates that compare browser rects, generated Unity rects, and visual/style evidence.
 - Unity output contracts for prefab ownership, source/generated status, framework boundaries, resource loading, and validation.
 - `UIStartView.prefab`-based View generation under `Assets/Resources/ui/`.
 - Thin View roots with visible and interactive controls placed under stable child nodes.
@@ -40,6 +42,7 @@ html-to-unity-ui-prefab/
   SKILL.zh-CN.md
   LICENSE
   README.md
+  CHANGELOG.md
   VERSION
   agents/
     openai.yaml
@@ -47,9 +50,12 @@ html-to-unity-ui-prefab/
     conversion-workflow.md
     output-checklist.md
   scripts/
+    compare_layout_quality.py
     validate_unity_prefab.py
     check_static_ui_compliance.py
+    package-release.ps1
     tests/
+      test_compare_layout_quality.py
       test_validate_unity_prefab.py
       test_check_static_ui_compliance.py
 ```
@@ -93,7 +99,10 @@ The repository includes static validation helpers used by the skill:
 ```text
 python scripts/validate_unity_prefab.py <prefab-file>
 python scripts/check_static_ui_compliance.py <unity-project-root>
+python scripts/compare_layout_quality.py <quality-json>
 ```
+
+`compare_layout_quality.py` checks browser-measured HTML rects against generated Unity rects, required visual evidence, and required style support. Its default gate fails on position delta greater than 4 scaled pixels, size delta greater than 2 percent, missing required visual evidence, or missing required style support.
 
 `validate_unity_prefab.py` checks prefab YAML structure, duplicate fileIDs, dangling local references, basic GameObject/component relationships, GUID formats, and nearby `.meta` references when possible.
 
@@ -107,6 +116,7 @@ These scripts are static checks. They do not replace Unity import validation, so
 - Keep `SKILL.zh-CN.md` synchronized whenever `SKILL.md` or `references/*.md` changes behavior, workflow steps, project structure rules, validation requirements, or completion reporting.
 - Keep English Markdown in the skill files free of CJK rule text; put Chinese explanations in `SKILL.zh-CN.md` unless preserving source/prototype display text as data.
 - Update this README when the public workflow, repository layout, validation commands, or maintenance contract changes.
+- Build release archives with `scripts/package-release.ps1`; the zip name uses `VERSION`.
 - The MIT license in `LICENSE` covers the skill documentation and bundled scripts.
 
 ## License

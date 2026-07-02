@@ -13,7 +13,9 @@ Keep English Markdown in this skill free of CJK rule text. Put Chinese explanati
 
 ## Core Rule
 
-Convert HTML/CSS into Unity UGUI prefabs by reading source first, then using rendered browser layout data to verify and measure what the source produces. Treat runnable prototypes, DOM, CSS, JavaScript state/rendering logic, browser-measured layout, and screenshots as evidence inputs. The final Unity output must still follow explicit user instructions, target project rules, same-project Unity samples, resource ownership, serialization boundaries, and validation requirements. Always obey the target project's `AGENTS.md` and applicable child-branch rules before generating or editing Unity files.
+Convert HTML/CSS into Unity UGUI prefabs by reading source first, then using rendered browser layout data to verify and measure what the source produces. Treat runnable prototypes, DOM, CSS, JavaScript state/rendering logic, browser-measured layout, screenshots, and Unity render or RectTransform exports as evidence inputs. The final Unity output must still follow explicit user instructions, target project rules, same-project Unity samples, resource ownership, serialization boundaries, and validation requirements. Always obey the target project's `AGENTS.md` and applicable child-branch rules before generating or editing Unity files.
+
+The conversion is not complete merely because prefab files were written. Completion requires a quality gate that proves the generated Unity layout and visual evidence are close enough to the source-backed prototype, or reports the remaining mismatch as unfinished work.
 
 All prototype interpretation is source-first. Read the relevant HTML, CSS, JavaScript, config, resource manifests, and generation inputs before opening the rendered page, running browser measurements, or looking at screenshots. Browser output and screenshots are verification or gap evidence after source review; they are not allowed to seed the first interpretation of structure, state, copy, assets, or behavior.
 
@@ -51,7 +53,8 @@ Before generating or editing Unity UI assets:
 - Write the element evidence plan and structured prefab spec before generating or editing prefabs/resources. The spec must include prefab name/path, source/generated classification and owning input, hierarchy, Transform or RectTransform values, root object policy, anchors, masks, sibling order, components, serialized fields, asset and script GUID sources, tags, layers, active state, static flags, extraction decisions, and validation plan.
 - Search same-project samples, referenced `.meta` files, script `.meta` files, and nested prefab examples before generating serialized fields.
 - Evaluate reusable item/common prefab extraction before generation.
-- Validate generated or modified prefabs with `scripts/validate_unity_prefab.py`; run `scripts/check_static_ui_compliance.py` for UI prefab work when a project root is available; then try Unity batchmode import validation when practical. The prefab validator checks Unity object blocks, duplicate fileIDs, missing GameObject or Transform-like objects, dangling local fileID references, basic component back-references, parent/child references, GUID format, and matching `.meta` files when possible. The UI scanner catches root-only View prefabs, non-ASCII GameObject names, visible or interactive components attached to a View root, built-in font fallback, runtime raw UI construction, and suspicious runtime visual repair. Treat validator or scanner errors as blockers, and treat warnings as risks to resolve or report. Static validation is not a replacement for Unity import validation.
+- Run the layout quality gate after generation: compare browser-measured HTML rects against generated Unity rects, record visual asset/style evidence for every meaningful element, and fail the task when required elements exceed the agreed thresholds or lack visual evidence. Use `scripts/compare_layout_quality.py` when a JSON comparison file is available.
+- Validate generated or modified prefabs with `scripts/validate_unity_prefab.py`; run `scripts/check_static_ui_compliance.py` for UI prefab work when a project root is available; then try Unity batchmode import validation when practical. The prefab validator checks Unity object blocks, duplicate fileIDs, missing GameObject or Transform-like objects, dangling local fileID references, basic component back-references, parent/child references, GUID format, and matching `.meta` files when possible. The UI scanner catches root-only View prefabs, non-ASCII GameObject names, visible or interactive components attached to a View root, built-in font fallback, runtime raw UI construction, and suspicious runtime visual repair. Treat validator, scanner, or layout quality errors as blockers, and treat warnings as risks to resolve or report. Static validation is not a replacement for Unity import validation.
 - Before atlas generation, derive the atlas short name from the external atlas folder using the project atlas rule, then scan every source sprite file. Every small sprite filename must already use `<atlasShortName>@<functional_name>.png`, and the normalized sprite names must be unique. Treat bare names such as `btn_primary.png`, mixed bare/prefixed duplicates, or names that would generate unprefixed atlas entries as blockers. Do not run TexturePacker or keep generated atlas outputs until the source inputs are fixed and regenerated.
 
 ## Unity Serialization And Reuse Rules
@@ -86,9 +89,10 @@ If multiple requested prefabs share structure, components, resource groups, nami
 9. Split images into large textures and small sprites, then build atlases for small sprites.
 10. Inspect `Assets/Resources/ui/UIStartView.prefab` and use it as the standard View prefab structure before generating `UIXXXView`.
 11. Generate or recreate `UIXXXView` and needed `UIXXXItem` prefabs under `Assets/Resources/ui/`.
-12. Validate the prefab/resource result before editing matching `UIXXXView.cs`; runtime View code may only consume completed prefab nodes and item prefabs.
-13. Attach or update matching `UIXXXView.cs` when it exists, use UGUI components, and preserve project naming rules.
-14. Emit a generation report listing created files, unsupported CSS, inferred nodes, missing assets, validation results, skipped checks, and manual Unity checks.
+12. Run the layout quality gate by comparing browser rects, generated Unity rects, and visual/style evidence; resolve or report every blocker before claiming completion.
+13. Validate the prefab/resource result before editing matching `UIXXXView.cs`; runtime View code may only consume completed prefab nodes and item prefabs.
+14. Attach or update matching `UIXXXView.cs` when it exists, use UGUI components, and preserve project naming rules.
+15. Emit a generation report listing created files, unsupported CSS, inferred nodes, missing assets, layout quality results, validation results, skipped checks, and manual Unity checks.
 
 ## Non-Negotiable Defaults
 
@@ -100,6 +104,8 @@ If multiple requested prefabs share structure, components, resource groups, nami
 - Use uniform width-based scale: `scale = 720 / htmlViewportWidth`. Apply this scale to node sizes and centered positions.
 - Treat height as adaptive viewport space, not a second independent scale factor.
 - Use browser-computed layout for flex, text, margins, padding, transforms, and positioned nodes.
+- Export or otherwise record the generated Unity rect for each meaningful UI element and compare it to the browser-measured rect. Default completion thresholds are position delta <= 4 scaled pixels and size delta <= 2 percent unless the user or project sets stricter values. Exceeding the threshold is unfinished conversion work, not a cosmetic note.
+- For required visual elements, record `asset_status` and `style_status` as source, generated, supported, missing, unsupported, inferred, substitute, or unknown. Required visuals with missing, unknown, inferred, placeholder, or substitute evidence block completion unless the user explicitly accepts the compromise.
 - Preserve prototype-driven UI states and type-specific rendering rules from JavaScript, such as card variants, disabled states, cooldown labels, refresh/ad countdown states, modal pause behavior, and empty-state copy.
 - Sort visual stacking by computed `z-index`; preserve DOM order for equal `z-index`.
 - Do not silently invent business behavior. Ask or report when button callbacks, static item references, or script exposure are unclear.

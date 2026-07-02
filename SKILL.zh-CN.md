@@ -180,6 +180,22 @@ Assets/Scripts/Runtime/Start/UIStartView.cs
 
 完成报告需要列出：生成的 prefab、source/generated 分类和拥有源/工具、生成或移动的资源、不支持的 CSS、栅格化为 PNG 的 CSS 视觉、自动生成或重命名节点、缺失源图片、推断组件类型、疑似九宫切片但未确认 slice 数据的资源、提升为 Item prefab 的重复组、因属于 ScrollView 而未静态引用的 Item prefab、抽取的公共 prefab 及引用它的 prefab、静态 prefab validator 结果、静态 UI 合规扫描结果、Unity batchmode 结果或跳过原因、资产和脚本 GUID/fileID 依赖、跳过的校验及原因、仍需人工确认的问题、Unity 内仍需人工检查的问题，以及截图和原型逻辑/浏览器测量不一致的地方。出现证据冲突时，按用户明确指令、项目规则、Unity 输出约束、同项目样例、原型/浏览器证据、截图证据的顺序处理。
 
+## 0.4.0 质量门禁同步说明
+
+本版本新增“布局质量门禁”：生成 prefab 不等于转换完成，必须证明 Unity 输出和源代码驱动的 HTML 原型足够接近，或者把差异作为未完成工作报告。
+
+转换完成前应记录每个关键元素的浏览器 `getBoundingClientRect()`、生成或导出的 Unity rect、位置偏差、尺寸偏差、视觉资源证据和样式支持状态。默认阈值为位置偏差不超过 4 个缩放像素，尺寸偏差不超过 2%。项目或用户给出更严格阈值时，以更严格阈值为准。
+
+当存在对比 JSON 时，运行：
+
+```text
+python scripts/compare_layout_quality.py <quality-json>
+```
+
+JSON 中的元素建议包含 `id`、`html_rect`、`unity_rect`、`visual_required`、`asset_status`、`style_required`、`style_status`。关键视觉元素如果缺少资源证据，或者只标记为 missing、unknown、inferred、placeholder、substitute，应阻断完成，除非用户明确接受该妥协。关键样式如果缺少支持或未实现，也应阻断完成。
+
+如果可以自动截取 Unity 渲染图，应把 Unity 截图与浏览器截图或源截图做 overlay/diff。像素级完全一致不是硬要求，但明显的位置错误、缺图、层级错误、裁剪、字体错误或 CSS 视觉缺失，都应修复或报告为未完成工作。
+
 ## 停止条件
 
 遇到以下情况要先停止并询问用户：项目规则冲突、TexturePacker 缺失、无法识别 Unity 项目根或 Unity 版本且用户未批准高风险继续、HTML 设计尺寸缺失且无法安全推断、关键 UI 证据缺失、生成 prefab 的拥有源/工具/输入无法识别、目标 prefab 已存在但用户没有要求重建、命名或 Item 抽取会造成不稳定业务引用、必需美术资源缺失、方案需要修改任意包含 `MiniGameKit` 的项目路径但用户未批准具体文件。
